@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using UnityEngine;
 using System.Collections.Concurrent;
+using WebSocketSharp;
+using WebSocketSharp.Server;
 
 namespace Tracker
 {
@@ -13,6 +15,7 @@ namespace Tracker
     public sealed class Tracker
     {
         private static Tracker _instance;
+        private WebSocket _socket;
         private ConcurrentQueue<TrackerEvent> _eventQueue;
         const int MAX_ELEMS = 500;
         //path where it will be saved
@@ -32,6 +35,8 @@ namespace Tracker
         {
             _eventQueue = new ConcurrentQueue<TrackerEvent>();
             _serializerList = new List<Serializer>();
+            _socket = new WebSocket("ws://localhost:4649");
+            ConfigureSocket();
 
         }
 
@@ -104,6 +109,37 @@ namespace Tracker
                 _eventQueue.TryDequeue(out aux);
                 
             }
+        }
+
+        private void ConfigureSocket()
+        {
+            _socket.OnOpen += (sender, e) => _socket.Send("Hi, there!");
+
+            _socket.OnMessage += (sender, e) =>
+               Debug.Log("OnMessage");
+                
+            _socket.OnError += (sender, e) =>
+                Debug.Log("OnError");
+
+            _socket.OnClose += (sender, e) =>
+                 Debug.Log("OnClose");
+
+
+        }
+
+        //Send information to server
+        public void Send()
+        {
+            _socket.Connect();
+
+
+
+
+
+
+
+            _socket.Close();
+
         }
     }
 }
