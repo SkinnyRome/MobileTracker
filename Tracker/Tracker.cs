@@ -22,6 +22,8 @@ namespace Tracker
         private string _path;
         //list of all serializers
         private List<Serializer> _serializerList;
+        private SerializerInterface _binarySerializer;
+        private Serializer _serializerPrueba;
 
         //struct serializer with the serializer and his control bool
         struct Serializer
@@ -35,8 +37,10 @@ namespace Tracker
         {
             _eventQueue = new ConcurrentQueue<TrackerEvent>();
             _serializerList = new List<Serializer>();
-            _socket = new WebSocket("ws://localhost:4649");
+            _socket = new WebSocket("ws://localhost:4649/server");
             ConfigureSocket();
+            _serializerPrueba._serializer = new JsonSerializer();
+            
 
         }
 
@@ -130,15 +134,27 @@ namespace Tracker
         //Send information to server
         public void Send()
         {
-            _socket.Connect();
 
+            //Crear archivo binario
+            while (_eventQueue.Count > 0)
+            {
+               
 
+                 _serializerPrueba._serializer.DumpEvent(_eventQueue.First(), _path);
+                 TrackerEvent aux;
+                 _eventQueue.TryDequeue(out aux);
 
+            }
+            FileInfo binaryFile = new FileInfo(_path + _serializerPrueba._serializer.GetFileName() + ".json");
+            if (binaryFile.Exists)
+            {
+                _socket.Connect();
+                byte[] b = new byte[1];
+                b[0] = 125;
+                _socket.Send(b);
 
-
-
-
-            _socket.Close();
+                _socket.Close();
+            }
 
         }
     }

@@ -9,32 +9,35 @@ using System.Xml;
 
 namespace Tracker
 {
-    public interface SerializerInterface
+    public abstract class SerializerInterface
     {
+        
         //Save an event
-        void DumpEvent(TrackerEvent e, string path);
+        public abstract void DumpEvent(TrackerEvent e, string path);
 
+        public const string _fileName = "TrackerInfo";
+
+        public string GetFileName() { return _fileName; }
     }
 
     //JSON
     public class JsonSerializer : SerializerInterface
     {
 
-        public void DumpEvent(TrackerEvent e, string path)
+        public override void DumpEvent(TrackerEvent e, string path)
         { 
             string result = JsonConvert.SerializeObject(e);
-            File.AppendAllText(path + "TrackerInfo.json", result);
+            File.AppendAllText(path + _fileName + ".json", result);
         }
     }
 
     //CSV
     public class CSVSerializer : SerializerInterface
     {
-
-        public void DumpEvent(TrackerEvent e, string path)
+        public override void DumpEvent(TrackerEvent e, string path)
         { 
             string csv = string.Format("{0},{1},{2}\n", e.IdSession, e.Type, e.TimeStamp);
-            File.AppendAllText(path + "TrackerInfo.csv", csv);
+            File.AppendAllText(path + _fileName + ".csv", csv);
 
         }
     }
