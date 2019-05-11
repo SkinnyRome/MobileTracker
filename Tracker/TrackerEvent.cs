@@ -8,6 +8,7 @@ using System.Runtime.Serialization;
 
 namespace Tracker
 {
+    [Serializable]
     public class TrackerEvent
     {
 
@@ -21,7 +22,6 @@ namespace Tracker
             idSession = idS;
             timeStamp = tS;
         }
-
 
         public float TimeStamp { get => timeStamp; set => timeStamp = value; }
         public string IdSession { get => idSession; set => idSession = value; }
