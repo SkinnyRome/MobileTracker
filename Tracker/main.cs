@@ -25,15 +25,15 @@ class main
         Tracker.Tracker.Instance.SetPath("D:/USABILIDAD/Proyecto/MobileTracker/");
         Tracker.Tracker.Instance.DumpData();
 
-       /* FileStream fs = File.Open("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfo.data", FileMode.Open);
+        /* FileStream fs = File.Open("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfo.data", FileMode.Open);
 
-        byte[] reads = new byte[fs.Length];
+         byte[] reads = new byte[fs.Length];
 
-        int s = fs.Read(reads, 0, (int)fs.Length);
+         int s = fs.Read(reads, 0, (int)fs.Length);
 
-        byte [] compress = Tracker.Utilities.Instance.Compress(reads);
+         byte [] compress = Tracker.Utilities.Instance.Compress(reads);
 
-        File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfo.gz", compress);*/
+         File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfo.gz", compress);*/
 
     }
 }

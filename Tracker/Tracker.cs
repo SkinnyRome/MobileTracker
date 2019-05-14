@@ -16,6 +16,7 @@ namespace Tracker
 
     public sealed class Tracker
     {
+   
         private static Tracker _instance;
         private WebSocket _socket;
         private ConcurrentQueue<TrackerEvent> _eventQueue;
@@ -24,6 +25,89 @@ namespace Tracker
         private string _path;
         //list of all serializers
         private List<Serializer> _serializerList;
+
+
+
+
+        /// <summary>
+        /// Struct for controlling the Tracker delivery rate in order to optimize device battery
+        /// FULL: Increase the data delivery frequency to the maximum
+        /// HIGH: Increase the data delivery frequency to a high level
+        /// MODERATE: Increase the data delivery frequency to moderate level
+        /// LOW: Makes a minor increment in the data delivery frequency
+        /// NONE: The frequency of delivery isn't affected
+        /// </summary>
+        enum Optimize { FULL, HIGH, MODERATE, LOW, NONE };
+
+        private Optimize CheckStatus()
+        {
+
+
+            // TODO: MIRAR TAMBIEN EL STATUS
+
+            float batteryLevel = SystemInfo.batteryLevel;
+            BatteryStatus batteryStatus = SystemInfo.batteryStatus;
+
+
+            if (batteryLevel == -1)
+            {
+#if DEBUG
+                Debug.Log("Current platform doesn´t support battery level info");
+
+#endif
+                return Optimize.NONE;
+            }
+            if (batteryStatus == BatteryStatus.Discharging || batteryStatus == BatteryStatus.NotCharging)
+            {
+                if (batteryLevel >= 0.75f)// LOW
+                {
+                    return Optimize.LOW;
+                }
+                else if (batteryLevel >= 0.5f)// MODERATE
+                {
+                    return Optimize.MODERATE;
+                }
+                else if (batteryLevel >= 0.3f)// HIGH
+                {
+                    return Optimize.HIGH;
+                }
+                else if (batteryLevel < 0.3f)// FULL
+                {
+                    return Optimize.FULL;
+                }
+                else
+                    return Optimize.NONE;// NONE
+            }
+            else
+            {
+                return Optimize.NONE;// NONE
+            }
+        }
+
+        // DESPUES DEL GUARDADO DE DATOS CHEQUEAR EL NIVEL DE OPTIMIZACÍON REQUERIDO
+        private void OptimizeTracker(Optimize level)
+        {
+            switch (level)
+            {
+                case Optimize.FULL:
+                    _deliveryTime = 90.0f;
+                    break;
+                case Optimize.HIGH:
+                    _deliveryTime = 60.0f;
+                    break;
+                case Optimize.MODERATE:
+                    _deliveryTime = 30.0f;
+                    break;
+                case Optimize.LOW:
+                    _deliveryTime = 15.0f;
+                    break;
+                case Optimize.NONE:
+                    _deliveryTime = 7.0f;
+                    break;
+            }
+        }
+
+        private float _deliveryTime;
 
         //struct serializer with the serializer and his control bool
         struct Serializer
@@ -96,7 +180,7 @@ namespace Tracker
 
         //Proccess event queue
         public void DumpData()
-        {
+        { 
             while (_eventQueue.Count > 0)
             {
                 foreach (var s in _serializerList)
@@ -109,7 +193,6 @@ namespace Tracker
 
                 TrackerEvent aux;
                 _eventQueue.TryDequeue(out aux);
-                
             }
         }
 
