@@ -202,7 +202,7 @@ namespace Tracker
         }
 
 
-        public void ProcessData()//TODO: mirar el tema de guardar cuando no ay conexion y luego enviar lo guardado
+        public void ProcessData()//TODO: mirar el tema de guardar cuando no ay conexion y luego enviar lo guardado y comprir todo
         {
             float tIni = DateTime.Now.Second;
             float tEnd;

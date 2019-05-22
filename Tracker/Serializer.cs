@@ -30,7 +30,7 @@ namespace Tracker
         public override void DumpEvent(TrackerEvent e, string path)
         { 
             string result = JsonConvert.SerializeObject(e);
-            File.AppendAllText(path + _fileName + ".json", result);
+            File.AppendAllText(path + _fileName + "JSON.json", result);
         }
     }
 
@@ -40,14 +40,14 @@ namespace Tracker
         public override void DumpEvent(TrackerEvent e, string path)
         { 
             string csv = string.Format("{0},{1},{2}\n", e.IdSession, e.Type, e.TimeStamp);
-            File.AppendAllText(path + _fileName + ".csv", csv);
+            File.AppendAllText(path + _fileName + "CSV.csv", csv);
         }
     }
 
     //XML
     public class XMLSerializer : SerializerInterface
     {
-        public void DumpEvent(TrackerEvent e, string path)
+        public override void DumpEvent(TrackerEvent e, string path)
         {
             throw new NotImplementedException();
         }
@@ -58,10 +58,10 @@ namespace Tracker
     {
         BinaryFormatter bf = new BinaryFormatter();
         FileStream fs;
-        public void DumpEvent(TrackerEvent e, string path)
+        public override void DumpEvent(TrackerEvent e, string path)
         {
             // Open the file if it exits or create a new one
-            fs = File.Open(path + "TrackerInfoBinaryFormatter.data", FileMode.Append);
+            fs = File.Open(path + _fileName + "BinaryFormatter.data", FileMode.Append);
 
             bf.Serialize(fs, e);
 
@@ -73,7 +73,7 @@ namespace Tracker
     //Binary
     public class BinarySerializer : SerializerInterface
     {
-        public void DumpEvent(TrackerEvent e, string path)
+        public override void DumpEvent(TrackerEvent e, string path)
         {
             StringBuilder sb = new StringBuilder();
             string data = string.Format("{0},{1},{2}", e.IdSession, e.Type, e.TimeStamp);
@@ -82,17 +82,7 @@ namespace Tracker
             {
                 sb.Append(Convert.ToString(c, 2).PadLeft(8, '0'));
             }
-            File.AppendAllText(path + "TrackerInfoBinary.data", sb.ToString() + "\n");
+            File.AppendAllText(path + _fileName + "Binary.data", sb.ToString() + "\n");
         }
-    }
-
-    //Bytes
-    public class BytesSerializer : SerializerInterface
-    {
-        public void DumpEvent(TrackerEvent e, string path)
-        {
-            throw new NotImplementedException();
-        }
-    }
-        
+    }        
 }
