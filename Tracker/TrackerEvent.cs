@@ -3,9 +3,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using UnityEngine;
+using System.Runtime.Serialization;
+
 
 namespace Tracker
 {
+    [Serializable]
     public class TrackerEvent
     {
 
@@ -19,7 +22,6 @@ namespace Tracker
             idSession = idS;
             timeStamp = tS;
         }
-
 
         public float TimeStamp { get => timeStamp; set => timeStamp = value; }
         public string IdSession { get => idSession; set => idSession = value; }

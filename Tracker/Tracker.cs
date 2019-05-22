@@ -7,6 +7,7 @@ using UnityEngine;
 using System.Collections.Concurrent;
 using WebSocketSharp;
 using WebSocketSharp.Server;
+using System.Threading;
 
 namespace Tracker
 {
@@ -14,6 +15,7 @@ namespace Tracker
 
     public sealed class Tracker
     {
+   
         private static Tracker _instance;
         private WebSocket _socket;
         private ConcurrentQueue<TrackerEvent> _eventQueue;
@@ -22,8 +24,111 @@ namespace Tracker
         private string _path;
         //list of all serializers
         private List<Serializer> _serializerList;
-        private SerializerInterface _binarySerializer;
-        private Serializer _serializerPrueba;
+
+        //Thread
+        private Thread thread;
+        private bool _running = false;
+
+
+        ///time which the program must wait between piece data deliveries
+        private float _deliveryTime;
+
+
+        /// <summary>
+        /// Struct for controlling the Tracker delivery rate in order to optimize device battery
+        /// FULL: Increase the data delivery frequency to the maximum
+        /// HIGH: Increase the data delivery frequency to a high level
+        /// MODERATE: Increase the data delivery frequency to moderate level
+        /// LOW: Makes a minor increment in the data delivery frequency
+        /// NONE: The frequency of delivery isn't affected
+        /// </summary>
+        enum Optimize { FULL, HIGH, MODERATE, LOW, NONE };
+
+        private Optimize CheckBatteryStatus()
+        {
+            float batteryLevel = SystemInfo.batteryLevel;
+            BatteryStatus batteryStatus = SystemInfo.batteryStatus;
+
+            if (batteryLevel == -1)
+            {
+#if DEBUG
+                Debug.Log("Current platform doesn´t support battery level info");
+
+#endif
+                return Optimize.NONE;
+            }
+            if (batteryStatus == BatteryStatus.Discharging || batteryStatus == BatteryStatus.NotCharging)
+            {
+                if (batteryLevel >= 0.75f)// LOW
+                {
+                    return Optimize.LOW;
+                }
+                else if (batteryLevel >= 0.5f)// MODERATE
+                {
+                    return Optimize.MODERATE;
+                }
+                else if (batteryLevel >= 0.3f)// HIGH
+                {
+                    return Optimize.HIGH;
+                }
+                else if (batteryLevel < 0.3f)// FULL
+                {
+                    return Optimize.FULL;
+                }
+                else
+                    return Optimize.NONE;// NONE
+            }
+            else
+            {
+                return Optimize.NONE;// NONE
+            }
+        }
+
+        // DESPUES DEL GUARDADO DE DATOS CHEQUEAR EL NIVEL DE OPTIMIZACÍON REQUERIDO
+        private void OptimizeTracker(Optimize level)
+        {
+            switch (level)
+            {
+                case Optimize.FULL:
+                    _deliveryTime = 90.0f;
+                    break;
+                case Optimize.HIGH:
+                    _deliveryTime = 60.0f;
+                    break;
+                case Optimize.MODERATE:
+                    _deliveryTime = 30.0f;
+                    break;
+                case Optimize.LOW:
+                    _deliveryTime = 15.0f;
+                    break;
+                case Optimize.NONE:
+                    _deliveryTime = 7.0f;
+                    break;
+            }
+        }
+
+        //Types of connectivity
+        enum Connectivity { NOINTERNET, CARRIERDATA, WIFI}
+        //Check device connection
+        private Connectivity ConnectivityStatus()
+        {
+            //Not reachable
+            if (Application.internetReachability == NetworkReachability.NotReachable)
+            {
+                return Connectivity.NOINTERNET;
+            }
+            //Check if the device can reach the internet via a carrier data network
+            else if (Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork)
+            {
+                return Connectivity.CARRIERDATA;
+            }
+            //Check if the device can reach the internet via a LAN (WIFI...)
+            else
+            {
+                return Connectivity.WIFI;
+            }
+        }
+
 
         //struct serializer with the serializer and his control bool
         struct Serializer
@@ -39,9 +144,9 @@ namespace Tracker
             _serializerList = new List<Serializer>();
             _socket = new WebSocket("ws://localhost:4649/server");
             ConfigureSocket();
-            _serializerPrueba._serializer = new JsonSerializer();
-            
-
+            thread = new Thread(ProcessData);
+            //thread.Start();
+            //_running = true;
         }
 
         public static Tracker Instance
@@ -96,9 +201,36 @@ namespace Tracker
             }
         }
 
-        //Proccess event queue
-        public void DumpData()
+
+        public void ProcessData()//TODO: mirar el tema de guardar cuando no ay conexion y luego enviar lo guardado
         {
+            float tIni = DateTime.Now.Second;
+            float tEnd;
+            while (_running) {
+                tEnd = DateTime.Now.Second;
+                OptimizeTracker(CheckBatteryStatus());
+                if (Math.Abs(tEnd - tIni) >= _deliveryTime)
+                {
+                    if (ConnectivityStatus() == Connectivity.NOINTERNET) {
+                        LocalDumpData();
+                    }
+                    else
+                    {
+                        /*if(mirar si hay algo guardado){
+                            enviar lo guardado y lo nuevo
+                        }
+                        else{
+                            solo lo nuevo
+                        }*/
+                        ServerDumpData();
+                    }
+                }
+            }
+        }
+
+        //Proccess event queue
+        public void LocalDumpData()
+        { 
             while (_eventQueue.Count > 0)
             {
                 foreach (var s in _serializerList)
@@ -111,9 +243,17 @@ namespace Tracker
 
                 TrackerEvent aux;
                 _eventQueue.TryDequeue(out aux);
-                
             }
         }
+
+        //Proccess event queue
+        public void ServerDumpData()
+        {
+            throw new NotImplementedException();
+
+        }
+
+
 
         private void ConfigureSocket()
         {

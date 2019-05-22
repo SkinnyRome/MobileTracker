@@ -6,6 +6,9 @@ using Newtonsoft.Json;
 using System.IO;
 using UnityEngine;
 using System.Xml;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.IO.Compression;
+using System.Xml.Serialization;
 
 namespace Tracker
 {
@@ -38,38 +41,58 @@ namespace Tracker
         { 
             string csv = string.Format("{0},{1},{2}\n", e.IdSession, e.Type, e.TimeStamp);
             File.AppendAllText(path + _fileName + ".csv", csv);
-
         }
     }
 
+    //XML
+    public class XMLSerializer : SerializerInterface
+    {
+        public void DumpEvent(TrackerEvent e, string path)
+        {
+            throw new NotImplementedException();
+        }
+    }
 
-    /* class XMLSerializer : SerializerInterface
-     {
+    //BinaryFormatter
+    public class BinaryFormatterSerializer : SerializerInterface
+    {
+        BinaryFormatter bf = new BinaryFormatter();
+        FileStream fs;
+        public void DumpEvent(TrackerEvent e, string path)
+        {
+            // Open the file if it exits or create a new one
+            fs = File.Open(path + "TrackerInfoBinaryFormatter.data", FileMode.Append);
 
-         string _path = "D:/UNIVERSIDAD/2018-2019/Ánalisis y Usabilidad de Videojuegos/Tracker/TrackerInfo.xml";
-         XmlDocument xml_document;
+            bf.Serialize(fs, e);
 
+            // Close the file and release any resources
+            fs.Close();
+        }
+    }
 
-         public void DumpEvent(Queue<TrackerEvent> queue)
-         {
+    //Binary
+    public class BinarySerializer : SerializerInterface
+    {
+        public void DumpEvent(TrackerEvent e, string path)
+        {
+            StringBuilder sb = new StringBuilder();
+            string data = string.Format("{0},{1},{2}", e.IdSession, e.Type, e.TimeStamp);
 
-             while (queue.Count > 0)
-             {
+            foreach (char c in data.ToCharArray())
+            {
+                sb.Append(Convert.ToString(c, 2).PadLeft(8, '0'));
+            }
+            File.AppendAllText(path + "TrackerInfoBinary.data", sb.ToString() + "\n");
+        }
+    }
 
-                 // Format the XML text.
-                 StringWriter string_writer = new StringWriter();
-                 XmlTextWriter xml_text_writer = new XmlTextWriter(string_writer);
-                 xml_text_writer.Formatting = System.Xml.Formatting.Indented;
-                 xml_document.WriteTo(xml_text_writer);
-
-
-                 // Display the result.
-                 txtResult.Text = string_writer.ToString();
-
-             }
-         }
-     }*/
-
-
-
+    //Bytes
+    public class BytesSerializer : SerializerInterface
+    {
+        public void DumpEvent(TrackerEvent e, string path)
+        {
+            throw new NotImplementedException();
+        }
+    }
+        
 }
