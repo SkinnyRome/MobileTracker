@@ -39,17 +39,31 @@ namespace Tracker
         /// <summary>
         /// Decompresses byte array to new byte array.
         /// </summary>
-        public byte[] Decompress(byte[] raw)
+        public byte[] Decompress(byte[] gzip)
         {
-            using (MemoryStream memory = new MemoryStream())
+            // Create a GZIP stream with decompression mode.
+            // Then create a buffer and write into while reading from the GZIP stream.
+            using (GZipStream stream = new GZipStream(new MemoryStream(gzip),CompressionMode.Decompress))
             {
-                using (GZipStream gzip = new GZipStream(memory, CompressionMode.Decompress, true))
+                const int size = 4096;
+                byte[] buffer = new byte[size];
+                using (MemoryStream memory = new MemoryStream())
                 {
-                    gzip.Write(raw, 0, raw.Length);
+                    int count = 0;
+                    do
+                    {
+                        count = stream.Read(buffer, 0, size);
+                        if (count > 0)
+                        {
+                            memory.Write(buffer, 0, count);
+                        }
+                    }
+                    while (count > 0);
+                    return memory.ToArray();
                 }
-                return memory.ToArray();
             }
         }
+
 
     }
 

@@ -7,8 +7,7 @@ using UnityEngine;
 using System.Collections.Concurrent;
 using WebSocketSharp;
 using WebSocketSharp.Server;
-
-
+using System.Threading;
 
 namespace Tracker
 {
@@ -25,8 +24,13 @@ namespace Tracker
         private string _path;
         //list of all serializers
         private List<Serializer> _serializerList;
+        //Thread
+        private Thread thread;
+        private bool _running = false;
 
 
+        ///time which the program must wait between piece data deliveries
+        private float _deliveryTime;
 
 
         /// <summary>
@@ -39,15 +43,10 @@ namespace Tracker
         /// </summary>
         enum Optimize { FULL, HIGH, MODERATE, LOW, NONE };
 
-        private Optimize CheckStatus()
+        private Optimize CheckBatteryStatus()
         {
-
-
-            // TODO: MIRAR TAMBIEN EL STATUS
-
             float batteryLevel = SystemInfo.batteryLevel;
             BatteryStatus batteryStatus = SystemInfo.batteryStatus;
-
 
             if (batteryLevel == -1)
             {
@@ -107,7 +106,28 @@ namespace Tracker
             }
         }
 
-        private float _deliveryTime;
+        //Types of connectivity
+        enum Connectivity { NOINTERNET, CARRIERDATA, WIFI}
+        //Check device connection
+        private Connectivity ConnectivityStatus()
+        {
+            //Not reachable
+            if (Application.internetReachability == NetworkReachability.NotReachable)
+            {
+                return Connectivity.NOINTERNET;
+            }
+            //Check if the device can reach the internet via a carrier data network
+            else if (Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork)
+            {
+                return Connectivity.CARRIERDATA;
+            }
+            //Check if the device can reach the internet via a LAN (WIFI...)
+            else
+            {
+                return Connectivity.WIFI;
+            }
+        }
+
 
         //struct serializer with the serializer and his control bool
         struct Serializer
@@ -123,7 +143,9 @@ namespace Tracker
             _serializerList = new List<Serializer>();
             _socket = new WebSocket("ws://localhost:4649");
             ConfigureSocket();
-
+            thread = new Thread(ProcessData);
+            //thread.Start();
+            //_running = true;
         }
 
         public static Tracker Instance
@@ -178,8 +200,35 @@ namespace Tracker
             }
         }
 
+
+        public void ProcessData()//TODO: mirar el tema de guardar cuando no ay conexion y luego enviar lo guardado
+        {
+            float tIni = DateTime.Now.Second;
+            float tEnd;
+            while (_running) {
+                tEnd = DateTime.Now.Second;
+                OptimizeTracker(CheckBatteryStatus());
+                if (Math.Abs(tEnd - tIni) >= _deliveryTime)
+                {
+                    if (ConnectivityStatus() == Connectivity.NOINTERNET) {
+                        LocalDumpData();
+                    }
+                    else
+                    {
+                        /*if(mirar si hay algo guardado){
+                            enviar lo guardado y lo nuevo
+                        }
+                        else{
+                            solo lo nuevo
+                        }*/
+                        ServerDumpData();
+                    }
+                }
+            }
+        }
+
         //Proccess event queue
-        public void DumpData()
+        public void LocalDumpData()
         { 
             while (_eventQueue.Count > 0)
             {
@@ -195,6 +244,15 @@ namespace Tracker
                 _eventQueue.TryDequeue(out aux);
             }
         }
+
+        //Proccess event queue
+        public void ServerDumpData()
+        {
+            throw new NotImplementedException();
+
+        }
+
+
 
         private void ConfigureSocket()
         {
