@@ -30,7 +30,7 @@ namespace Tracker
         public override void DumpEvent(TrackerEvent e, string path)
         { 
             string result = JsonConvert.SerializeObject(e);
-            File.AppendAllText(path + _fileName + "JSON.json", result);
+            File.AppendAllText(path + _fileName + ".json", result);
         }
     }
 
@@ -40,7 +40,7 @@ namespace Tracker
         public override void DumpEvent(TrackerEvent e, string path)
         { 
             string csv = string.Format("{0},{1},{2}\n", e.IdSession, e.Type, e.TimeStamp);
-            File.AppendAllText(path + _fileName + "CSV.csv", csv);
+            File.AppendAllText(path + _fileName + ".csv", csv);
         }
     }
 
@@ -61,7 +61,7 @@ namespace Tracker
         public override void DumpEvent(TrackerEvent e, string path)
         {
             // Open the file if it exits or create a new one
-            fs = File.Open(path + _fileName + "BinaryFormatter.data", FileMode.Append);
+            fs = File.Open(path + _fileName, FileMode.Append);
 
             bf.Serialize(fs, e);
 
@@ -82,7 +82,7 @@ namespace Tracker
             {
                 sb.Append(Convert.ToString(c, 2).PadLeft(8, '0'));
             }
-            File.AppendAllText(path + _fileName + "Binary.data", sb.ToString() + "\n");
+            File.AppendAllText(path + _fileName + ".data", sb.ToString() + "\n");
         }
     }        
 }

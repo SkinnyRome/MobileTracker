@@ -15,7 +15,7 @@ namespace Tracker
 
     public sealed class Tracker
     {
-   
+
         private static Tracker _instance;
         private WebSocket _socket;
         private ConcurrentQueue<TrackerEvent> _eventQueue;
@@ -27,7 +27,7 @@ namespace Tracker
 
         //Thread
         private Thread thread;
-        private bool _running = false;
+        private bool _running = true;
 
 
         ///time which the program must wait between piece data deliveries
@@ -108,7 +108,7 @@ namespace Tracker
         }
 
         //Types of connectivity
-        enum Connectivity { NOINTERNET, CARRIERDATA, WIFI}
+        enum Connectivity { NOINTERNET, CARRIERDATA, WIFI }
         //Check device connection
         private Connectivity ConnectivityStatus()
         {
@@ -143,10 +143,20 @@ namespace Tracker
             _eventQueue = new ConcurrentQueue<TrackerEvent>();
             _serializerList = new List<Serializer>();
             _socket = new WebSocket("ws://localhost:4649/server");
-            ConfigureSocket();
+            //ConfigureSocket();
             thread = new Thread(ProcessData);
-            //thread.Start();
-            //_running = true;
+        }
+
+        public void Init()
+        {
+            _running = true;
+            thread.Start();
+        }
+
+        public void Stop()
+        {
+            _running = false;
+            thread.Join();
         }
 
         public static Tracker Instance
@@ -174,7 +184,7 @@ namespace Tracker
             _serializerList.Add(s);
         }
 
-    
+
         //Add an event
         public void AddEvent(TrackerEvent e)
         {
@@ -206,12 +216,14 @@ namespace Tracker
         {
             float tIni = DateTime.Now.Second;
             float tEnd;
-            while (_running) {
+            while (_running)
+            {
                 tEnd = DateTime.Now.Second;
                 OptimizeTracker(CheckBatteryStatus());
                 if (Math.Abs(tEnd - tIni) >= _deliveryTime)
                 {
-                    if (ConnectivityStatus() == Connectivity.NOINTERNET) {
+                    if (ConnectivityStatus() == Connectivity.NOINTERNET)
+                    {
                         LocalDumpData();
                     }
                     else
@@ -230,7 +242,7 @@ namespace Tracker
 
         //Proccess event queue
         public void LocalDumpData()
-        { 
+        {
             while (_eventQueue.Count > 0)
             {
                 foreach (var s in _serializerList)
@@ -247,21 +259,35 @@ namespace Tracker
         }
 
         //Proccess event queue
+        //Send information to server
         public void ServerDumpData()
         {
-            throw new NotImplementedException();
+            _socket.Connect();
 
+            LocalDumpData();
+
+            FileStream fs = File.Open(_path + _serializerList[0]._serializer.GetFileName() + ".csv", FileMode.Open);
+            byte[] reads = new byte[fs.Length];
+            //Save data in reads
+            int s = fs.Read(reads, 0, (int)fs.Length);
+            byte[] compress = Utilities.Instance.Compress(reads);
+
+
+            _socket.Send(compress);
+            _socket.Close();
+
+            //File.Delete(_path + _serializerList[0]._serializer.GetFileName() + ".csv");
         }
+    }
 
 
-
-        private void ConfigureSocket()
+    /*private void ConfigureSocket()
         {
             _socket.OnOpen += (sender, e) => _socket.Send("Hi, there!");
 
             _socket.OnMessage += (sender, e) =>
                Debug.Log("OnMessage");
-                
+
             _socket.OnError += (sender, e) =>
                 Debug.Log("OnError");
 
@@ -269,33 +295,5 @@ namespace Tracker
                  Debug.Log("OnClose");
 
 
-        }
-
-        //Send information to server
-        public void Send()
-        {
-
-            //Crear archivo binario
-            while (_eventQueue.Count > 0)
-            {
-               
-
-                 _serializerPrueba._serializer.DumpEvent(_eventQueue.First(), _path);
-                 TrackerEvent aux;
-                 _eventQueue.TryDequeue(out aux);
-
-            }
-            FileInfo binaryFile = new FileInfo(_path + _serializerPrueba._serializer.GetFileName() + ".json");
-            if (binaryFile.Exists)
-            {
-                _socket.Connect();
-                byte[] b = new byte[1];
-                b[0] = 125;
-                _socket.Send(b);
-
-                _socket.Close();
-            }
-
-        }
-    }
+        }*/       
 }

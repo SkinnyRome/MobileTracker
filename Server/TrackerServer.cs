@@ -7,6 +7,7 @@ using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.IO;
 
+
 namespace Server
 {
 
@@ -14,9 +15,15 @@ namespace Server
     {
         protected override void OnMessage(MessageEventArgs e)
         {
-            Console.Write("Ha llegado un mensaje\n");
+            Console.Write("\nHa llegado un mensaje\n");
             //FileInfo f = new FileInfo(e.Data);
-            Console.Write("DATA: " + e.RawData.ToString() + "\n");
+            Console.Write("DATA: " + "\n");
+            byte[] read = Tracker.Utilities.Instance.Decompress(e.RawData);
+            File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", read);
+            for (int i = 0; i < e.RawData.Length; i++)
+            {
+                Console.Write(e.RawData[i].ToString() + "\n");
+            }
             //Console.Write(f.ToString());
             
         }
@@ -40,9 +47,7 @@ namespace Server
             Console.Write("Opening server");
         }
 
-        public bool Running() { return _running;
-            
-        }
+        public bool Running() { return _running; }
 
         WebSocketServer wssv;
         private bool _running;
