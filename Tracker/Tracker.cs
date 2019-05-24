@@ -48,7 +48,7 @@ namespace Tracker
         {
             float batteryLevel = SystemInfo.batteryLevel;
             BatteryStatus batteryStatus = SystemInfo.batteryStatus;
-
+            AddEvent(new TrackerEvent("battery", 1, batteryLevel));
             if (batteryLevel == -1)
             {
 #if DEBUG
@@ -119,7 +119,7 @@ namespace Tracker
             }
             //Check if the device can reach the internet via a carrier data network
             else if (Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork)
-            {
+            { 
                 return Connectivity.CARRIERDATA;
             }
             //Check if the device can reach the internet via a LAN (WIFI...)
@@ -147,12 +147,14 @@ namespace Tracker
             thread = new Thread(ProcessData);
         }
 
+        //Init the thread
         public void Init()
         {
             _running = true;
             thread.Start();
         }
 
+        //Stop the thread
         public void Stop()
         {
             _running = false;

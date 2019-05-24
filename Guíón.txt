@@ -1,4 +1,4 @@
-
+﻿
 
 
 /*********************** Sistema de tracking optimizado para móviles con trazas binarias, gestión de conectividad *************************/
@@ -18,3 +18,20 @@ Tracker para Unity de ámbito general optimizado para dispositivos móviles.
 	- sistema operativo
 5. Interpretación de las trazas en binario (deserialización) en el servidor.
 6. Personalización de los parámetros de adaptación del tracker.
+
+
+
+
+
+TODO:
+1.conseguir info de:
+	- giroscópio
+	- captura múltiple de input
+	- vida de aplicación en primer y segundo plano
+	- eventos de cámara y micrófono
+	- sistema operativo
+y crear un tipo de evento predefinido para cada uno
+
+2.acceder al ancho de banda actual
+3.intentar visualizar el localhost e interpretar las trazas
+4.personalizacion del tamaño de la cola y de la frecuencia de guardado
