@@ -30,7 +30,7 @@ namespace Tracker
         public int Type { get => type; set => type = value; }
         public string MoreInfo { get => moreInfo; set => moreInfo = value; }
     }
-
+    [Serializable]
     public class GyroEvent : TrackerEvent
     {
         public GyroEvent(string idS, int t, float tS) : base(idS, t, tS)
@@ -45,7 +45,7 @@ namespace Tracker
             }
         }
     }
-
+    [Serializable]
     public class RunInBackgroundEvent : TrackerEvent
     {
         public RunInBackgroundEvent(string idS, int t, float tS) : base(idS, t, tS)
@@ -53,7 +53,7 @@ namespace Tracker
             moreInfo = Application.runInBackground.ToString();
         }
     }
-
+    [Serializable]
     public class CameraEvent : TrackerEvent
     {
         public CameraEvent(string idS, int t, float tS) : base (idS, t, tS)
@@ -65,7 +65,7 @@ namespace Tracker
         }
 
     }
-
+    [Serializable]
     public class MicrophoneEvent : TrackerEvent
     {
         public MicrophoneEvent(string idS, int t, float tS) : base(idS, t, tS)
@@ -76,7 +76,7 @@ namespace Tracker
             }
         }
     }
-
+    [Serializable]
     public class SystemEvent : TrackerEvent
     {
         public SystemEvent(string idS, int t, float tS) : base(idS, t, tS)

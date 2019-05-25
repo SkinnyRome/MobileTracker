@@ -39,7 +39,7 @@ namespace Tracker
     {
         public override void DumpEvent(TrackerEvent e, string path)
         { 
-            string csv = string.Format("{0},{1},{2}\n", e.IdSession, e.Type, e.TimeStamp);
+            string csv = string.Format("{0},{1},{2},{3}\n", e.IdSession, e.Type, e.TimeStamp, e.MoreInfo);
             File.AppendAllText(path + _fileName + ".csv", csv);
         }
     }
@@ -76,7 +76,7 @@ namespace Tracker
         public override void DumpEvent(TrackerEvent e, string path)
         {
             StringBuilder sb = new StringBuilder();
-            string data = string.Format("{0},{1},{2}", e.IdSession, e.Type, e.TimeStamp);
+            string data = string.Format("{0},{1},{2},{3}", e.IdSession, e.Type, e.TimeStamp, e.MoreInfo);
 
             foreach (char c in data.ToCharArray())
             {
