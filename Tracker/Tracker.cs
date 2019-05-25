@@ -84,7 +84,7 @@ namespace Tracker
             }
         }
 
-        // DESPUES DEL GUARDADO DE DATOS CHEQUEAR EL NIVEL DE OPTIMIZACÍON REQUERIDO
+        //Change delivery frequency in function of battery
         private void OptimizeTracker(Optimize level)
         {
             switch (level)
@@ -148,8 +148,15 @@ namespace Tracker
         }
 
         //Init the thread
-        public void Init()
+        public void Init(bool ShowSystemEvents)
         {
+            if (ShowSystemEvents)
+            {
+                AddEvent(new SystemEvent("-1", -1, -1));
+                AddEvent(new GyroEvent("-1", -1, -1));
+                AddEvent(new CameraEvent("-1", -1, -1));
+                AddEvent(new MicrophoneEvent("-1", -1, -1));
+            }
             _running = true;
             thread.Start();
         }
@@ -226,16 +233,25 @@ namespace Tracker
                 {
                     if (ConnectivityStatus() == Connectivity.NOINTERNET)
                     {
-                        LocalDumpData();
+                        LocalDumpData(); //TmpSaveData
                     }
                     else
                     {
-                        /*if(mirar si hay algo guardado){
-                            enviar lo guardado y lo nuevo
+                        if (File.Exists(_path + _serializerList[0]._serializer.GetFileName() + ".csv"))
+                        {
+                            _socket.Connect();
+
+                            FileStream fs = File.Open(_path + _serializerList[0]._serializer.GetFileName() + ".csv", FileMode.Open);
+                            byte[] reads = new byte[fs.Length];
+                            //Save data in reads
+                            int s = fs.Read(reads, 0, (int)fs.Length);
+                            byte[] compress = Utilities.Instance.Compress(reads);
+
+                            _socket.Send(compress);
+                            _socket.Close();
+
+                            //File.Delete(_path + _serializerList[0]._serializer.GetFileName() + ".csv");
                         }
-                        else{
-                            solo lo nuevo
-                        }*/
                         ServerDumpData();
                     }
                 }
@@ -266,7 +282,7 @@ namespace Tracker
         {
             _socket.Connect();
 
-            LocalDumpData();
+            LocalDumpData(); //TmpSaveData
 
             FileStream fs = File.Open(_path + _serializerList[0]._serializer.GetFileName() + ".csv", FileMode.Open);
             byte[] reads = new byte[fs.Length];

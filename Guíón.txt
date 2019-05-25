@@ -24,14 +24,7 @@ Tracker para Unity de ámbito general optimizado para dispositivos móviles.
 
 
 TODO:
-1.conseguir info de:
-	- giroscópio
-	- captura múltiple de input
-	- vida de aplicación en primer y segundo plano
-	- eventos de cámara y micrófono
-	- sistema operativo
-y crear un tipo de evento predefinido para cada uno
 
-2.acceder al ancho de banda actual
+
 3.intentar visualizar el localhost e interpretar las trazas
 4.personalizacion del tamaño de la cola y de la frecuencia de guardado
