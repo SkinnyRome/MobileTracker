@@ -8,6 +8,7 @@ using System.Collections.Concurrent;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.Threading;
+using System.IO.Compression;
 
 namespace Tracker
 {
@@ -48,7 +49,7 @@ namespace Tracker
         {
             float batteryLevel = SystemInfo.batteryLevel;
             BatteryStatus batteryStatus = SystemInfo.batteryStatus;
-            AddEvent(new TrackerEvent("battery", 1, batteryLevel));
+
             if (batteryLevel == -1)
             {
 #if DEBUG
@@ -119,7 +120,7 @@ namespace Tracker
             }
             //Check if the device can reach the internet via a carrier data network
             else if (Application.internetReachability == NetworkReachability.ReachableViaCarrierDataNetwork)
-            { 
+            {
                 return Connectivity.CARRIERDATA;
             }
             //Check if the device can reach the internet via a LAN (WIFI...)
@@ -142,13 +143,31 @@ namespace Tracker
         {
             _eventQueue = new ConcurrentQueue<TrackerEvent>();
             _serializerList = new List<Serializer>();
+            //SerializerInterface binary = new BinarySerializer();
+            //AddSerializer(binary, true);
             _socket = new WebSocket("ws://localhost:4649/server");
             //ConfigureSocket();
             thread = new Thread(ProcessData);
         }
 
         //Init the thread
-        public void Init(bool ShowSystemEvents)
+        public void Init()
+        {
+            string aux = "";
+            foreach (var device in WebCamTexture.devices)
+            {
+                aux += device.name.ToString() + " ";
+            }
+            foreach (var device in Microphone.devices)
+            {
+                aux += device.ToString() + " " + Microphone.IsRecording(device).ToString() + " ";
+            }
+            _running = true;
+            thread.Start();
+        }
+
+        //Stop the thread
+        public void Stop(bool ShowSystemEvents)
         {
             if (ShowSystemEvents)
             {
@@ -157,15 +176,10 @@ namespace Tracker
                 AddEvent(new CameraEvent("-1", -1, -1));
                 AddEvent(new MicrophoneEvent("-1", -1, -1));
             }
-            _running = true;
-            thread.Start();
-        }
-
-        //Stop the thread
-        public void Stop()
-        {
             _running = false;
             thread.Join();
+            SaveTmpData();
+            ServerDumpData();
         }
 
         public static Tracker Instance
@@ -231,27 +245,18 @@ namespace Tracker
                 OptimizeTracker(CheckBatteryStatus());
                 if (Math.Abs(tEnd - tIni) >= _deliveryTime)
                 {
+                    tIni = DateTime.Now.Second;
                     if (ConnectivityStatus() == Connectivity.NOINTERNET)
                     {
-                        LocalDumpData(); //TmpSaveData
+                        SaveTmpData();
                     }
                     else
                     {
-                        if (File.Exists(_path + _serializerList[0]._serializer.GetFileName() + ".csv"))
+                        if (File.Exists(_path + _serializerList[0]._serializer.GetFileName() + ".data"))
                         {
-                            _socket.Connect();
-
-                            FileStream fs = File.Open(_path + _serializerList[0]._serializer.GetFileName() + ".csv", FileMode.Open);
-                            byte[] reads = new byte[fs.Length];
-                            //Save data in reads
-                            int s = fs.Read(reads, 0, (int)fs.Length);
-                            byte[] compress = Utilities.Instance.Compress(reads);
-
-                            _socket.Send(compress);
-                            _socket.Close();
-
-                            //File.Delete(_path + _serializerList[0]._serializer.GetFileName() + ".csv");
+                            ServerDumpData();
                         }
+                        SaveTmpData();
                         ServerDumpData();
                     }
                 }
@@ -259,6 +264,7 @@ namespace Tracker
         }
 
         //Proccess event queue
+        //Save the info in local for all desired serializers
         public void LocalDumpData()
         {
             while (_eventQueue.Count > 0)
@@ -277,28 +283,52 @@ namespace Tracker
         }
 
         //Proccess event queue
+        //Save the info temporally in local with binary serializer
+        public void SaveTmpData()
+        {
+            while (_eventQueue.Count > 0)
+            {
+                _serializerList[0]._serializer.DumpEvent(_eventQueue.First(), _path);
+                TrackerEvent aux;
+                _eventQueue.TryDequeue(out aux);
+            }
+        }
+
+        //Proccess event queue
         //Send information to server
         public void ServerDumpData()
         {
+
             _socket.Connect();
 
-            LocalDumpData(); //TmpSaveData
-
-            FileStream fs = File.Open(_path + _serializerList[0]._serializer.GetFileName() + ".csv", FileMode.Open);
+            FileStream fs = File.Open(_path + _serializerList[0]._serializer.GetFileName() + ".data", FileMode.Open);
             byte[] reads = new byte[fs.Length];
             //Save data in reads
             int s = fs.Read(reads, 0, (int)fs.Length);
-            byte[] compress = Utilities.Instance.Compress(reads);
+            fs.Close();
+            //byte[] compress = Utilities.Instance.Compress(reads);
 
-
-            _socket.Send(compress);
+            _socket.Send(reads);
             _socket.Close();
 
-            //File.Delete(_path + _serializerList[0]._serializer.GetFileName() + ".csv");
+            File.Delete(_path + _serializerList[0]._serializer.GetFileName() + ".data");
+
         }
     }
 
+    /*//Compress process
+         FileStream fs = File.Open("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", FileMode.Open);
+         byte[] reads = new byte[fs.Length];
+        //Save data in reads
+         int s = fs.Read(reads, 0, (int)fs.Length);
+         byte [] compress = Tracker.Utilities.Instance.Compress(reads);
+         File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.gz", compress);*/
 
+
+    /*//Decompress process
+    byte[] file = File.ReadAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.gz");
+    byte[] decompressed = Tracker.Utilities.Instance.Decompress(file);
+    File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", decompressed);*/
     /*private void ConfigureSocket()
         {
             _socket.OnOpen += (sender, e) => _socket.Send("Hi, there!");
@@ -313,5 +343,5 @@ namespace Tracker
                  Debug.Log("OnClose");
 
 
-        }*/       
+        }*/
 }

@@ -13,7 +13,7 @@ namespace DemoApp
         {
             TrackerEvent e1 = new TrackerEvent("prueba", 10, 0.5f);
             Tracker.Tracker.Instance.AddEvent(e1);
-            Tracker.Tracker.Instance.Send();
+            //Tracker.Tracker.Instance.Send();
         }
     }
 }

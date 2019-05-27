@@ -17,7 +17,7 @@ namespace Tracker
         protected float timeStamp;
         protected string moreInfo;
 
-        public TrackerEvent(string idS, int t, float tS, string mI = ""){
+        public TrackerEvent(string idS, int t, float tS, string mI = "-"){
 
             type = t;
             idSession = idS;
@@ -30,12 +30,13 @@ namespace Tracker
         public int Type { get => type; set => type = value; }
         public string MoreInfo { get => moreInfo; set => moreInfo = value; }
     }
+
     [Serializable]
     public class GyroEvent : TrackerEvent
     {
         public GyroEvent(string idS, int t, float tS) : base(idS, t, tS)
         {
-            moreInfo = SystemInfo.supportsGyroscope.ToString();
+            moreInfo = SystemInfo.supportsGyroscope.ToString() + " ";
             if (SystemInfo.supportsGyroscope)
             {
                 if (Input.gyro.enabled)
@@ -45,6 +46,7 @@ namespace Tracker
             }
         }
     }
+
     [Serializable]
     public class RunInBackgroundEvent : TrackerEvent
     {
@@ -53,6 +55,7 @@ namespace Tracker
             moreInfo = Application.runInBackground.ToString();
         }
     }
+
     [Serializable]
     public class CameraEvent : TrackerEvent
     {
@@ -60,11 +63,12 @@ namespace Tracker
         {
             foreach (var device in WebCamTexture.devices)
             {
-                moreInfo += device.ToString() + " ";
+                moreInfo += device.name.ToString() + " ";
             }
         }
 
     }
+
     [Serializable]
     public class MicrophoneEvent : TrackerEvent
     {
@@ -76,19 +80,13 @@ namespace Tracker
             }
         }
     }
+
     [Serializable]
     public class SystemEvent : TrackerEvent
     {
         public SystemEvent(string idS, int t, float tS) : base(idS, t, tS)
         {
-            moreInfo = SystemInfo.deviceModel.ToString() + " " + SystemInfo.graphicsDeviceName.ToString() + " " + SystemInfo.graphicsDeviceType.ToString() + " " + SystemInfo.operatingSystem.ToString() + " " + SystemInfo.processorCount.ToString() + " " + SystemInfo.processorFrequency.ToString() + " " + SystemInfo.supportsVibration.ToString();
+            moreInfo = SystemInfo.deviceModel.ToString() + " - " + SystemInfo.graphicsDeviceName.ToString() + " - " + SystemInfo.graphicsDeviceType.ToString() + " - " + SystemInfo.operatingSystem.ToString() + " - " + SystemInfo.processorCount.ToString() + " - " + SystemInfo.processorFrequency.ToString() + " - " + SystemInfo.supportsVibration.ToString();
         }
     }
-
-
-
-
-
-
-
 }

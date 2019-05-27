@@ -84,5 +84,6 @@ namespace Tracker
             }
             File.AppendAllText(path + _fileName + ".data", sb.ToString() + "\n");
         }
+
     }        
 }

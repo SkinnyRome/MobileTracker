@@ -21,6 +21,7 @@ namespace Tracker
                 return _instance;
             }
         }
+
         /// <summary>
         /// Compresses byte array to new byte array.
         /// </summary>
@@ -28,7 +29,7 @@ namespace Tracker
         {
             using (MemoryStream memory = new MemoryStream())
             {
-                using (GZipStream gzip = new GZipStream(memory, CompressionMode.Compress, true))
+                using (GZipStream gzip = new GZipStream(memory, CompressionMode.Compress, false))
                 {
                     gzip.Write(raw, 0, raw.Length);
                 }
@@ -43,7 +44,7 @@ namespace Tracker
         {
             // Create a GZIP stream with decompression mode.
             // Then create a buffer and write into while reading from the GZIP stream.
-            using (GZipStream stream = new GZipStream(new MemoryStream(gzip),CompressionMode.Decompress))
+            using (GZipStream stream = new GZipStream(new MemoryStream(gzip), CompressionMode.Decompress))
             {
                 const int size = 4096;
                 byte[] buffer = new byte[size];
@@ -65,6 +66,16 @@ namespace Tracker
         }
 
 
-    }
+        //Binary to string
+        public string BinaryToString(string data)
+        {
+            List<Byte> byteList = new List<Byte>();
 
+            for (int i = 0; i < data.Length; i += 8)
+            {
+                byteList.Add(Convert.ToByte(data.Substring(i, 8), 2));
+            }
+            return Encoding.ASCII.GetString(byteList.ToArray());
+        }
+    }
 }

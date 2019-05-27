@@ -20,10 +20,16 @@ class main
             Tracker.Tracker.Instance.AddEvent(e[i]);
         }
 
-        Tracker.SerializerInterface b = new Tracker.CSVSerializer();
+        Tracker.SerializerInterface b = new Tracker.BinarySerializer();
         Tracker.Tracker.Instance.AddSerializer(b, true);
         Tracker.Tracker.Instance.SetPath("D:/USABILIDAD/Proyecto/MobileTracker/");
-        //Tracker.Tracker.Instance.LocalDumpData();
+        //Tracker.Tracker.Instance.SaveTmpData();
+        string[] file = File.ReadAllLines("D:/USABILIDAD/Proyecto/MobileTracker" + "/TrackerInfo.data");
+        for(int i = 0; i < file.Length; i++)
+        {
+            string a = Tracker.Utilities.Instance.BinaryToString(file[i]);
+            File.AppendAllText("D:/USABILIDAD/Proyecto/MobileTracker" + "/TrackerInfoServer.csv", a + "\n");
+        }
 
         /*//Compress process
          FileStream fs = File.Open("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", FileMode.Open);

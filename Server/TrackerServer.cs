@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 using WebSocketSharp;
 using WebSocketSharp.Server;
 using System.IO;
+using UnityEngine;
+
 
 
 namespace Server
@@ -15,17 +17,14 @@ namespace Server
     {
         protected override void OnMessage(MessageEventArgs e)
         {
-            Console.Write("\nHa llegado un mensaje\n");
-            //FileInfo f = new FileInfo(e.Data);
-            Console.Write("DATA: " + "\n");
-            byte[] read = Tracker.Utilities.Instance.Decompress(e.RawData);
-            File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", read);
-            for (int i = 0; i < e.RawData.Length; i++)
+            //byte[] read = Tracker.Utilities.Instance.Decompress(e.RawData);
+            File.WriteAllBytes(Application.persistentDataPath + "/TrackerInfoServer.data", e.RawData);
+            string[] file = File.ReadAllLines(Application.persistentDataPath + "/TrackerInfoServer.data");
+            for (int i = 0; i < file.Length; i++)
             {
-                Console.Write(e.RawData[i].ToString() + "\n");
+                string a = Tracker.Utilities.Instance.BinaryToString(file[i]);
+                File.AppendAllText(Application.persistentDataPath + "/TrackerInfoServer.csv", a + "\n");
             }
-            //Console.Write(f.ToString());
-            
         }
     }
 
@@ -46,13 +45,11 @@ namespace Server
         public void Start() { wssv.Start();
             Console.Write("Opening server");
         }
+       
 
         public bool Running() { return _running; }
 
         WebSocketServer wssv;
         private bool _running;
-
-
-
     }
 }
