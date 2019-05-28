@@ -17,8 +17,9 @@ namespace Server
     {
         protected override void OnMessage(MessageEventArgs e)
         {
-            //byte[] read = Tracker.Utilities.Instance.Decompress(e.RawData);
+            //byte[] decompress = Tracker.Utilities.Instance.Decompress(e.RawData);  If you do a dll of the project, GZipStream of Unity doesn´t work
             File.WriteAllBytes(Application.persistentDataPath + "/TrackerInfoServer.data", e.RawData);
+            //Convert .data files to .csv in order to create a readable file by users
             string[] file = File.ReadAllLines(Application.persistentDataPath + "/TrackerInfoServer.data");
             for (int i = 0; i < file.Length; i++)
             {

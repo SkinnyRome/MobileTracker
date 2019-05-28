@@ -20,20 +20,22 @@ namespace Tracker
         private static Tracker _instance;
         private WebSocket _socket;
         private ConcurrentQueue<TrackerEvent> _eventQueue;
-        const int MAX_ELEMS = 500;
+        private int MAX_ELEMS = 500;
         //path where it will be saved
         private string _path;
         //list of all serializers
         private List<Serializer> _serializerList;
 
         //Thread
-        private Thread thread;
+        private Thread _thread;
         private bool _running = true;
 
 
         ///time which the program must wait between piece data deliveries
         private float _deliveryTime;
 
+        public enum MODE { LOW, NORMAL, ULTRA};
+        private float _mode = 1;
 
         /// <summary>
         /// Struct for controlling the Tracker delivery rate in order to optimize device battery
@@ -91,19 +93,19 @@ namespace Tracker
             switch (level)
             {
                 case Optimize.FULL:
-                    _deliveryTime = 90.0f;
+                    _deliveryTime = 90.0f * _mode;
                     break;
                 case Optimize.HIGH:
-                    _deliveryTime = 60.0f;
+                    _deliveryTime = 60.0f * _mode;
                     break;
                 case Optimize.MODERATE:
-                    _deliveryTime = 30.0f;
+                    _deliveryTime = 30.0f * _mode;
                     break;
                 case Optimize.LOW:
-                    _deliveryTime = 15.0f;
+                    _deliveryTime = 15.0f * _mode;
                     break;
                 case Optimize.NONE:
-                    _deliveryTime = 7.0f;
+                    _deliveryTime = 7.0f * _mode;
                     break;
             }
         }
@@ -124,10 +126,11 @@ namespace Tracker
                 return Connectivity.CARRIERDATA;
             }
             //Check if the device can reach the internet via a LAN (WIFI...)
-            else
+            else 
             {
                 return Connectivity.WIFI;
             }
+           
         }
 
 
@@ -143,27 +146,15 @@ namespace Tracker
         {
             _eventQueue = new ConcurrentQueue<TrackerEvent>();
             _serializerList = new List<Serializer>();
-            //SerializerInterface binary = new BinarySerializer();
-            //AddSerializer(binary, true);
             _socket = new WebSocket("ws://localhost:4649/server");
-            //ConfigureSocket();
-            thread = new Thread(ProcessData);
+            _thread = new Thread(ProcessData);
         }
 
         //Init the thread
         public void Init()
         {
-            string aux = "";
-            foreach (var device in WebCamTexture.devices)
-            {
-                aux += device.name.ToString() + " ";
-            }
-            foreach (var device in Microphone.devices)
-            {
-                aux += device.ToString() + " " + Microphone.IsRecording(device).ToString() + " ";
-            }
             _running = true;
-            thread.Start();
+            _thread.Start();
         }
 
         //Stop the thread
@@ -177,9 +168,21 @@ namespace Tracker
                 AddEvent(new MicrophoneEvent("-1", -1, -1));
             }
             _running = false;
-            thread.Join();
-            SaveTmpData();
-            ServerDumpData();
+            _thread.Join();
+            //Do a final save for last events
+            if (ConnectivityStatus() == Connectivity.NOINTERNET)
+            {
+                SaveTmpData();
+            }
+            else
+            {
+                if (File.Exists(_path + _serializerList[0]._serializer.GetFileName() + ".data"))
+                {
+                    ServerDumpData();
+                }
+                SaveTmpData();
+                ServerDumpData();
+            }
         }
 
         public static Tracker Instance
@@ -196,6 +199,35 @@ namespace Tracker
         public void SetPath(string path)
         {
             _path = path;
+        }
+
+        //Change the opt of battery
+        public void SetOptMode (MODE mode)
+        {
+            switch (mode)
+            {
+                case MODE.LOW:
+                    _mode = 0.5f;
+                    break;
+                case MODE.NORMAL:
+                    _mode = 1.0f;
+                    break;
+                case MODE.ULTRA:
+                    _mode = 2.0f;
+                    break;
+                default:
+                    _mode = 1.0f;
+                    break;
+            }
+        }
+
+        //Set max elem of events (500-2000)
+        public void SetMAX_ELEM(int maxElem)
+        {
+            if (maxElem >= 500 && maxElem <= 2000)
+            {
+                MAX_ELEMS = maxElem;
+            }
         }
 
         //Add new serializers
@@ -243,14 +275,13 @@ namespace Tracker
             {
                 tEnd = DateTime.Now.Second;
                 OptimizeTracker(CheckBatteryStatus());
-                if (Math.Abs(tEnd - tIni) >= _deliveryTime)
+                if (tEnd - tIni >= _deliveryTime)
                 {
-                    tIni = DateTime.Now.Second;
                     if (ConnectivityStatus() == Connectivity.NOINTERNET)
                     {
                         SaveTmpData();
                     }
-                    else
+                    else 
                     {
                         if (File.Exists(_path + _serializerList[0]._serializer.GetFileName() + ".data"))
                         {
@@ -259,6 +290,7 @@ namespace Tracker
                         SaveTmpData();
                         ServerDumpData();
                     }
+                    tIni = DateTime.Now.Second;
                 }
             }
         }
@@ -293,6 +325,7 @@ namespace Tracker
                 _eventQueue.TryDequeue(out aux);
             }
         }
+       
 
         //Proccess event queue
         //Send information to server
@@ -306,42 +339,14 @@ namespace Tracker
             //Save data in reads
             int s = fs.Read(reads, 0, (int)fs.Length);
             fs.Close();
-            //byte[] compress = Utilities.Instance.Compress(reads);
+            //byte[] compress = Utilities.Instance.Compress(reads); If you do a dll of the project, GZipStream of Unity doesn´t work
 
             _socket.Send(reads);
             _socket.Close();
 
-            File.Delete(_path + _serializerList[0]._serializer.GetFileName() + ".data");
-
+            FileInfo f = new FileInfo(_path + _serializerList[0]._serializer.GetFileName() + ".data");
+            f.Delete();
         }
+
     }
-
-    /*//Compress process
-         FileStream fs = File.Open("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", FileMode.Open);
-         byte[] reads = new byte[fs.Length];
-        //Save data in reads
-         int s = fs.Read(reads, 0, (int)fs.Length);
-         byte [] compress = Tracker.Utilities.Instance.Compress(reads);
-         File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.gz", compress);*/
-
-
-    /*//Decompress process
-    byte[] file = File.ReadAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.gz");
-    byte[] decompressed = Tracker.Utilities.Instance.Decompress(file);
-    File.WriteAllBytes("D:/USABILIDAD/Proyecto/MobileTracker/TrackerInfoCSV.csv", decompressed);*/
-    /*private void ConfigureSocket()
-        {
-            _socket.OnOpen += (sender, e) => _socket.Send("Hi, there!");
-
-            _socket.OnMessage += (sender, e) =>
-               Debug.Log("OnMessage");
-
-            _socket.OnError += (sender, e) =>
-                Debug.Log("OnError");
-
-            _socket.OnClose += (sender, e) =>
-                 Debug.Log("OnClose");
-
-
-        }*/
 }

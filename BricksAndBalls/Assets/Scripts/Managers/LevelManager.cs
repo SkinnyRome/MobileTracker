@@ -103,8 +103,8 @@ public class LevelManager : MonoBehaviour
         b.Stop();
         if (!_firstBallDetected)
         {
-            _firstBallDetected = true;
             Tracker.Tracker.Instance.AddEvent(new Tracker.TrackerEvent(GameManager.instance.GetGuid().ToString(), (int)GameManager.EVENT_TYPES.SHOOT_BALL, Time.time));
+            _firstBallDetected = true;
             _ballSink.MoveTo(new Vector2(b.transform.position.x, b.transform.position.y + 0.2f));
             _ballSink.Show();
             _ballManager.HideText();

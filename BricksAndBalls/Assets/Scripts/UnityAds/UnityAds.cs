@@ -14,10 +14,10 @@ public class UnityAds : MonoBehaviour
     public void ShowBasicAd() {
 
         
-        if (Advertisement.IsReady("video"))
+        /*if (Advertisement.IsReady("video"))
         {
             Advertisement.Show("video");
-        }
+        }*/
 
     }
     /// <summary>
@@ -25,11 +25,11 @@ public class UnityAds : MonoBehaviour
     /// </summary>
     public void ShowRewardedAd()
     {
-        if (Advertisement.IsReady("rewardedVideo"))
+       /* if (Advertisement.IsReady("rewardedVideo"))
         {
             var options = new ShowOptions { resultCallback = HandleShowResult };
             Advertisement.Show("rewardedVideo", options);
-        }
+        }*/
     }
     /// <summary>
     /// Handle the result of an ad
@@ -37,7 +37,7 @@ public class UnityAds : MonoBehaviour
     /// <param name="result">The result</param>
     private void HandleShowResult(ShowResult result)
     {
-        switch (result)
+        /*switch (result)
         {
             case ShowResult.Finished:
                 Debug.Log("The ad was successfully shown.");               
@@ -49,6 +49,6 @@ public class UnityAds : MonoBehaviour
             case ShowResult.Failed:
                 Debug.LogError("The ad failed to be shown.");
                 break;
-        }
+        }*/
     }
 }

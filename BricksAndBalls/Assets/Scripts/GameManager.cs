@@ -39,8 +39,24 @@ public class GameManager : MonoBehaviour
             Tracker.Tracker.Instance.SetPath(Application.persistentDataPath + "/");
             Tracker.SerializerInterface b = new Tracker.BinarySerializer();
             Tracker.Tracker.Instance.AddSerializer(b, true);
+            Tracker.SerializerInterface c = new Tracker.CSVSerializer();
+            Tracker.Tracker.Instance.AddSerializer(c, true);
             Tracker.Tracker.Instance.Init();
             Tracker.Tracker.Instance.AddEvent(new Tracker.TrackerEvent(_sessionGuid.ToString(), (int)EVENT_TYPES.START_SESSION, Time.time));
+            //Tracker.Tracker.Instance.SetMAX_ELEM(1500);
+            //Tracker.Tracker.Instance.SetOptMode(Tracker.Tracker.MODE.ULTRA);
+
+            //Force use to get the devices info
+            string aux = "";
+            foreach (var camDevice in WebCamTexture.devices)
+            {
+                aux += camDevice.name.ToString() + " ";
+            }
+            foreach (var microDevice in Microphone.devices)
+            {
+                aux += microDevice.ToString() + " " + Microphone.IsRecording(microDevice).ToString() + " ";
+                Microphone.End(microDevice);
+            }
 
         }
         //If instance already exists and it's not this:
@@ -142,7 +158,9 @@ public class GameManager : MonoBehaviour
     public void RetryLevel()
     {
         if (_selectedLevelName != null)
+        {
             SceneManager.LoadScene("GameplayScene");
+        }
         else
             Debug.Log("No hay mapa del ultimo juego");
     }
@@ -247,7 +265,7 @@ public class GameManager : MonoBehaviour
 
     private void OnApplicationQuit()
     {
-        Tracker.Tracker.Instance.AddEvent(new Tracker.TrackerEvent(_sessionGuid.ToString(), (int)EVENT_TYPES.SHOOT_BALL, Time.time));
+        Tracker.Tracker.Instance.AddEvent(new Tracker.TrackerEvent(_sessionGuid.ToString(), (int)EVENT_TYPES.END_SESSION, Time.time));
         
     }
 
